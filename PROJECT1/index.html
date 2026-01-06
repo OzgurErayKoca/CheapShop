@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CheapShop — Ucuz ve Hızlı</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="shop-header">
+    <div class="container header-row">
+      <a class="logo" href="#">CheapShop</a>
+      <div class="search-wrap">
+        <input id="search" placeholder="Ara: telefon, aksesuar..." />
+      </div>
+      <div class="header-actions">
+        <button id="cart-btn" class="cart-btn" aria-label="Sepet">Sepet (<span id="cart-count">0</span>)</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero shop-hero">
+      <div class="container">
+        <h1>CheapShop — Ucuz Fırsatlar</h1>
+        <p>Kaliteli ürünler, uygun fiyatlar. Hemen alışverişe başlayın.</p>
+      </div>
+    </section>
+
+    <section class="section products" id="products">
+      <div class="container">
+        <h2>Öne Çıkan Ürünler</h2>
+        <div class="grid product-grid" id="product-grid">
+          <!-- Ürünler JS ile eklenecek -->
+        </div>
+      </div>
+    </section>
+
+    <section class="section alt info">
+      <div class="container">
+        <h2>CheapShop Hakkında</h2>
+        <p>CheapShop, uygun fiyatlı ve güvenilir ürünleri hızlıca ulaştırmak için tasarlanmış örnek bir e-ticaret arayüzüdür.</p>
+      </div>
+    </section>
+  </main>
+
+  <aside id="cart-sidebar" class="cart-sidebar">
+    <div class="cart-header">
+      <h3>Sepetiniz</h3>
+      <button id="close-cart">✕</button>
+    </div>
+    <div id="cart-items" class="cart-items"></div>
+    <div class="cart-footer">
+      <div class="cart-total">Toplam: <span id="cart-total">0.00</span> ₺</div>
+      <button id="checkout" class="btn">Satın Al</button>
+    </div>
+  </aside>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>&copy; 2026 CheapShop — Uygun fiyatlı ürünler.</p>
+    </div>
+  </footer>
+
+  <script>
+    // Örnek ürün verisi
+    const products = [
+      {id:1, name:'Kablosuz Kulaklık', price:249.90, img:'https://via.placeholder.com/300x200?text=Kulaklık'},
+      {id:2, name:'Telefon Kılıfı', price:39.90, img:'https://via.placeholder.com/300x200?text=Kılıf'},
+      {id:3, name:'Taşınabilir Şarj', price:149.90, img:'https://via.placeholder.com/300x200?text=Powerbank'},
+      {id:4, name:'Bluetooth Hoparlör', price:199.90, img:'https://via.placeholder.com/300x200?text=Hoparlör'},
+      {id:5, name:'USB-C Kablo', price:29.90, img:'https://via.placeholder.com/300x200?text=Kablo'},
+      {id:6, name:'Akıllı Saat', price:499.90, img:'https://via.placeholder.com/300x200?text=Saat'}
+    ];
+
+    const productGrid = document.getElementById('product-grid');
+    const cartBtn = document.getElementById('cart-btn');
+    const cartCountEl = document.getElementById('cart-count');
+    const cartSidebar = document.getElementById('cart-sidebar');
+    const cartItemsEl = document.getElementById('cart-items');
+    const cartTotalEl = document.getElementById('cart-total');
+    const closeCart = document.getElementById('close-cart');
+
+    function renderProducts(list){
+      productGrid.innerHTML = '';
+      list.forEach(p=>{
+        const el = document.createElement('div'); el.className='card product';
+        el.innerHTML = `
+          <img src="${p.img}" alt="${p.name}" />
+          <h3>${p.name}</h3>
+          <div class="price">${p.price.toFixed(2)} ₺</div>
+          <button class="btn add" data-id="${p.id}">Sepete Ekle</button>
+        `;
+        productGrid.appendChild(el);
+      });
+    }
+
+    function getCart(){
+      return JSON.parse(localStorage.getItem('cheapshop_cart')||'{}');
+    }
+    function saveCart(cart){ localStorage.setItem('cheapshop_cart', JSON.stringify(cart)); }
+
+    function addToCart(id){
+      const cart = getCart();
+      cart[id] = (cart[id]||0)+1; saveCart(cart); updateCartUI();
+    }
+    function removeFromCart(id){ const cart = getCart(); delete cart[id]; saveCart(cart); updateCartUI(); }
+
+    function updateCartUI(){
+      const cart = getCart();
+      const ids = Object.keys(cart);
+      let count = 0; let total = 0;
+      cartItemsEl.innerHTML = '';
+      ids.forEach(id=>{
+        const qty = cart[id]; count += qty;
+        const p = products.find(x=>x.id==id);
+        if(!p) return;
+        total += p.price * qty;
+        const item = document.createElement('div'); item.className='cart-item';
+        item.innerHTML = `<div class="cart-item-info"><strong>${p.name}</strong><div>${qty} x ${p.price.toFixed(2)} ₺</div></div><div class="cart-item-actions"><button class="small" data-remove="${id}">Kaldır</button></div>`;
+        cartItemsEl.appendChild(item);
+      });
+      cartCountEl.textContent = count;
+      cartTotalEl.textContent = total.toFixed(2);
+    }
+
+    // event delegation
+    productGrid.addEventListener('click', e=>{
+      if(e.target.matches('.add')) addToCart(e.target.dataset.id);
+    });
+    cartItemsEl.addEventListener('click', e=>{
+      if(e.target.matches('[data-remove]')) removeFromCart(e.target.getAttribute('data-remove'));
+    });
+    cartBtn.addEventListener('click', ()=>{ cartSidebar.classList.add('open'); });
+    closeCart.addEventListener('click', ()=>{ cartSidebar.classList.remove('open'); });
+
+    // search
+    document.getElementById('search').addEventListener('input', e=>{
+      const q = e.target.value.toLowerCase(); renderProducts(products.filter(p=>p.name.toLowerCase().includes(q)));
+    });
+
+    // init
+    renderProducts(products);
+    updateCartUI();
+  </script>
+</body>
+</html>
